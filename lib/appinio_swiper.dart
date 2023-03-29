@@ -330,15 +330,25 @@ class _AppinioSwiperState extends State<AppinioSwiper>
   }
 
   Widget _foregroundItem(BoxConstraints constraints) {
+    int status = 0;
     return Positioned(
       left: _left,
       top: _top,
       child: GestureDetector(
         child: Transform.rotate(
           angle: _angle,
-          child: Container(
-            constraints: constraints,
-            child: widget.cardsBuilder(context, currentIndex),
+          child: Stack(
+            children: [
+              Container(
+                constraints: constraints,
+                child: widget.cardsBuilder(context, currentIndex),
+              ),
+              status == 0
+                ? SizedBox()
+                : status == 2
+                  ? Text('Connected')
+                  : Text('Skip')
+            ],
           ),
         ),
         onTap: () {
@@ -358,6 +368,13 @@ class _AppinioSwiperState extends State<AppinioSwiper>
           if (!widget.isDisabled) {
             setState(() {
               final swipeOption = widget.swipeOptions;
+              if (tapInfo.delta.dx > 0) {
+                status = 2;
+              } else if (tapInfo.delta.dx == 0) {
+                status = 0;
+              } else {
+                status = 1;
+              }
               switch (swipeOption) {
                 case AppinioSwipeOptions.allDirections:
                   _left += tapInfo.delta.dx;
