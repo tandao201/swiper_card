@@ -370,10 +370,12 @@ class _AppinioSwiperState extends State<AppinioSwiper>
               final swipeOption = widget.swipeOptions;
               if (tapInfo.delta.dx > 0) {
                 status = 2;
+                print('Swiping to right..................');
               } else if (tapInfo.delta.dx == 0) {
                 status = 0;
               } else {
                 status = 1;
+                print('Swiping to left..................');
               }
               switch (swipeOption) {
                 case AppinioSwipeOptions.allDirections:
