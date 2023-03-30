@@ -62,6 +62,10 @@ class AppinioSwiper extends StatefulWidget {
   /// direction in which the card gets swiped when triggered by controller, default set to right
   final AppinioSwiperDirection direction;
 
+  final Widget? rightSwipeWidget;
+
+  final Widget? leftSwipeWidget;
+
   const AppinioSwiper({
     Key? key,
     required this.cardsBuilder,
@@ -81,6 +85,8 @@ class AppinioSwiper extends StatefulWidget {
     this.onEnd,
     this.unswipe,
     this.direction = AppinioSwiperDirection.right,
+    this.rightSwipeWidget,
+    this.leftSwipeWidget,
   })  : assert(maxAngle >= 0 && maxAngle <= 360),
         assert(threshold >= 1 && threshold <= 100),
         assert(direction != AppinioSwiperDirection.none),
@@ -121,6 +127,7 @@ class _AppinioSwiperState extends State<AppinioSwiper>
   bool _isUnswiping = false;
   int _swipedDirectionVertical = 0; //-1 left, 1 right
   int _swipedDirectionHorizontal = 0; //-1 bottom, 1 top
+  int status = 0;
 
   AppinioSwiperDirection detectedDirection = AppinioSwiperDirection.none;
 
@@ -155,22 +162,34 @@ class _AppinioSwiperState extends State<AppinioSwiper>
           }
         })
         //swipe widget left from the outside
-        ..addListener(() {
+        ..addListener(() async {
           if (widget.controller!.state == AppinioSwiperState.swipeLeft) {
             if (currentIndex < widget.cardsCount) {
-              _left = -1;
-              _swipeHorizontal(context);
-              _animationController.forward();
+              setState(() {
+                status = 1;
+              });
+              Future.delayed(const Duration(milliseconds: 700), () {
+                _left = -1;
+                _swipeHorizontal(context);
+                _animationController.forward();
+              });
             }
           }
         })
         //swipe widget right from the outside
-        ..addListener(() {
+        ..addListener(() async {
           if (widget.controller!.state == AppinioSwiperState.swipeRight) {
             if (currentIndex < widget.cardsCount) {
-              _left = widget.threshold + 1;
-              _swipeHorizontal(context);
-              _animationController.forward();
+              setState(() {
+                status = 2;
+              });
+              Future.delayed(const Duration(milliseconds: 700), () {
+                _left = widget.threshold + 1;
+                _swipeHorizontal(context);
+                _animationController.forward();
+              });
+
+
             }
           }
         })
@@ -330,7 +349,6 @@ class _AppinioSwiperState extends State<AppinioSwiper>
   }
 
   Widget _foregroundItem(BoxConstraints constraints) {
-    int status = 0;
     return Positioned(
       left: _left,
       top: _top,
@@ -344,10 +362,10 @@ class _AppinioSwiperState extends State<AppinioSwiper>
                 child: widget.cardsBuilder(context, currentIndex),
               ),
               status == 0
-                ? SizedBox()
+                ? const SizedBox(width: 0,)
                 : status == 2
-                  ? Text('Connected')
-                  : Text('Skip')
+                  ? widget.rightSwipeWidget ?? const SizedBox(width: 0,)
+                  : widget.leftSwipeWidget ?? const SizedBox(width: 0,)
             ],
           ),
         ),
@@ -365,17 +383,26 @@ class _AppinioSwiperState extends State<AppinioSwiper>
           }
         },
         onPanUpdate: (tapInfo) {
+          RenderBox renderBox = context.findRenderObject() as RenderBox;
+          Offset position = renderBox.globalToLocal(tapInfo.globalPosition);
+          Offset centerOffset =
+          Offset(constraints.maxWidth / 2, constraints.maxHeight / 2);
           if (!widget.isDisabled) {
             setState(() {
               final swipeOption = widget.swipeOptions;
               if (tapInfo.delta.dx > 0) {
-                status = 2;
-                print('Swiping to right..................');
+                if (position.dx > centerOffset.dx +20) {
+                  status = 2;
+                }
               } else if (tapInfo.delta.dx == 0) {
-                status = 0;
+
+                if (position.dx == centerOffset.dx) {
+                  status = 0;
+                }
               } else {
-                status = 1;
-                print('Swiping to left..................');
+                if (position.dx < centerOffset.dx-20) {
+                  status = 1;
+                }
               }
               switch (swipeOption) {
                 case AppinioSwipeOptions.allDirections:
@@ -402,6 +429,9 @@ class _AppinioSwiperState extends State<AppinioSwiper>
             _tapOnTop = false;
             _onEndAnimation();
             _animationController.forward();
+            setState(() {
+              status = 0;
+            });
           }
         },
       ),
@@ -477,6 +507,7 @@ class _AppinioSwiperState extends State<AppinioSwiper>
     }
     (_top <= 0) ? _swipedDirectionVertical = 1 : _swipedDirectionVertical = -1;
     _horizontal = true;
+    status = 0;
   }
 
   //moves the card away to the top or bottom
