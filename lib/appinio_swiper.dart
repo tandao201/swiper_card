@@ -384,6 +384,7 @@ class _AppinioSwiperState extends State<AppinioSwiper>
                   break;
                 case AppinioSwipeOptions.horizontal:
                   _left += tapInfo.delta.dx;
+                  print('Swiping to horizontal..................');
                   break;
                 case AppinioSwipeOptions.vertical:
                   _top += tapInfo.delta.dy;
